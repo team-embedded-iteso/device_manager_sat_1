@@ -1477,33 +1477,95 @@ resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanc
 
 void App_AutenticationMessage(mcpsToNwkMessage_t *pMsg)
 {
-	uint8_t Sat_ID = pMsg->msgData.dataInd.pMsdu[1];
-	uint8_t Password1 = pMsg->msgData.dataInd.pMsdu[2];
-	uint8_t Password2 = pMsg->msgData.dataInd.pMsdu[3];
-	uint8_t Message1 = pMsg->msgData.dataInd.pMsdu[4];
-	uint8_t Message2 = pMsg->msgData.dataInd.pMsdu[5];
-	uint16_t Password;
-	uint16_t Message;
 
-	Password = (Password2 <<8) | (Password1 );
-	Message = (Message2 <<8) | (Message1 );
+    uint8_t Sat_ID = pMsg->msgData.dataInd.pMsdu[1];
 
-	if(Sat_ID == 1 && Password == 0x1234)
-	{
-		Serial_Print(mInterfaceId," Validation Complete\n\r Password:", gNoBlock_d);
-		Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
-		Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-		Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
-		App_TransmitMessageSAT(1);
+    uint8_t Password1 = pMsg->msgData.dataInd.pMsdu[2];
 
-	}
-	else
-	{
-		/**/
-		Serial_Print(mInterfaceId," Error \n\r Password:", gNoBlock_d);
-				Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
-				Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-				Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
-	}
+    uint8_t Password2 = pMsg->msgData.dataInd.pMsdu[3];
 
+    uint8_t Message1 = pMsg->msgData.dataInd.pMsdu[4];
+
+    uint8_t Message2 = pMsg->msgData.dataInd.pMsdu[5];
+
+    uint16_t Password;
+
+    uint16_t Message;
+
+      /* Password and Message concatenation */
+
+    Password = (Password2 <<8) | (Password1 );
+
+    Message = (Message2 <<8) | (Message1 );
+
+    /* SAT 1 Validation */
+
+    if(Sat_ID == SAT1_ID && Password == PASSWORD_SAT1)
+
+    {
+
+        Serial_Print(mInterfaceId," Validation for Satellite 1 is complete\n\r Password:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+
+        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+
+        //App_TransmitMessageSAT(&CounterLed, 1);
+
+
+  
+
+
+    }
+
+    else
+
+    {
+
+        Serial_Print(mInterfaceId," Error \n\r Password:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+
+        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+
+    }
+
+    /* SAT 2 Validation */
+
+    if(Sat_ID == SAT2_ID && Password == PASSWORD_SAT2)
+
+    {
+
+        Serial_Print(mInterfaceId," Validation for Satellite 2 is complete\n\r Password:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+
+        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+
+        //App_TransmitMessageSAT(&CounterLed, 1);
+
+
+  
+
+
+    }
+
+    else
+
+    {
+        Serial_Print(mInterfaceId," Error \n\r Password:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+
+        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
+
+        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+
+    }
 }
