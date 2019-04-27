@@ -122,8 +122,8 @@ extern void Mac_SetExtendedAddress(uint8_t *pAddr, instanceId_t instanceId);
 
 /* AnMer: PROTOTYPE DEFINITIONS FOR APPLICATION */
 void App_AutenticationMessage(mcpsToNwkMessage_t *pMsg);
-static void    App_TransmitMessageSAT(uint8_t length);
-//void App_SendingMessage();
+static void    App_TransmitMessageSAT1(uint8_t length);
+static void    App_TransmitMessageSAT2(uint8_t length);
 
 /************************************************************************************
 *************************************************************************************
@@ -202,6 +202,24 @@ uint8_t gState;
 /* AnMer: VARIABLE DECLARATIONS */
 uint8_t SAT_ID;
 uint8_t PASSWORD;
+
+volatile uint32_t g_systickCounter;
+
+void SysTick_Handler(void)
+{
+    if (g_systickCounter != 0U)
+    { 
+        g_systickCounter--;
+    }
+}
+
+void SysTick_DelayTicks(uint32_t n)
+{
+    g_systickCounter = n;
+    while(g_systickCounter != 0U)
+    {
+    }
+}
 
 /************************************************************************************
 *************************************************************************************
@@ -994,44 +1012,17 @@ static void App_HandleMcpsInput(mcpsToNwkMessage_t *pMsgIn)
       
       if (pMsgIn->msgData.dataInd.pMsdu[0] == 0xFF)
       {
-        // Sensor data message
-    	  /*Serial_Print(mInterfaceId," Ctrl info:", gNoBlock_d);
+        // Sensor data message AnMer
+    	  Serial_Print(mInterfaceId," SAT ID:", gNoBlock_d);
     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[1], 1, 0);
-    	  
-    	  Serial_Print(mInterfaceId," On/Off:", gNoBlock_d);      
-    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[2], 1, 0);
-    	  
-    	  Serial_Print(mInterfaceId," Temperature:", gNoBlock_d);
-    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[3], 1, 0);
-    	  
-    	  Serial_Print(mInterfaceId," Accelerometer:", gNoBlock_d);
-    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[4], 3, gPrtHexCommas_c);
-    	  
-    	  Serial_Print(mInterfaceId," Pressure:", gNoBlock_d);
-    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[7], 1, 0);
-    	  
-    	  Serial_Print(mInterfaceId," Battery level:", gNoBlock_d);
-    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[8], 1, 0);*/
 
+    	  Serial_Print(mInterfaceId," Password:", gNoBlock_d);
+    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[2], 2, 0);
 
-    	  	  	  Serial_Print(mInterfaceId," SAT ID:", gNoBlock_d);
-    	     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[1], 1, 0);
+    	  Serial_Print(mInterfaceId," Message:", gNoBlock_d);
+    	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[4], 2, gPrtHexCommas_c);
 
-    	     	  Serial_Print(mInterfaceId," Password:", gNoBlock_d);
-    	     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[2], 2, 0);
-
-    	     	  /*Serial_Print(mInterfaceId," ", gNoBlock_d);
-    	     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[3], 1, 0);*/
-
-    	     	  Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-    	     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[4], 2, gPrtHexCommas_c);
-
-    	     	  /*Serial_Print(mInterfaceId," Pressure:", gNoBlock_d);
-    	     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[7], 1, 0);
-
-    	     	  Serial_Print(mInterfaceId," Battery level:", gNoBlock_d);
-    	     	  Serial_PrintHex(mInterfaceId,(uint8_t*)&pMsgIn->msgData.dataInd.pMsdu[8], 1, 0);*/
-    	     	 App_AutenticationMessage( pMsgIn);
+    	  App_AutenticationMessage( pMsgIn);
       }
       else
       {
@@ -1203,7 +1194,7 @@ static void App_TransmitData(uint8_t * pData, uint8_t length)
 
 
 /*AnMer*/
-static void App_TransmitMessageSAT(uint8_t length)
+static void App_TransmitMessageSAT1(uint8_t length)
 {
   uint8_t morePackets = 1;
   uint8_t deviceAddress = 0x01;
@@ -1256,7 +1247,7 @@ static void App_TransmitMessageSAT(uint8_t length)
           mpPacket->msgType = gMcpsDataReq_c;
           /* Copy data to be sent to packet */
           mpPacket->msgData.dataReq.pMsdu = (uint8_t*)(&(mpPacket->msgData.dataReq.pMsdu)) + sizeof(uint8_t*);
-          // FLib_MemCpy(mpPacket->msgData.dataReq.pMsdu, (void *)pData, length);
+          // AnMer: FLib_MemCpy(mpPacket->msgData.dataReq.pMsdu, (void *)pData, length);
           /* Create the header using device information stored when creating
           the association response. In this simple example the use of short
           addresses is hardcoded. In a real world application we must be
@@ -1268,18 +1259,15 @@ static void App_TransmitMessageSAT(uint8_t length)
           FLib_MemCpy(&mpPacket->msgData.dataReq.srcPanId, (void*)&mPanId, 2);
           mpPacket->msgData.dataReq.dstAddrMode = gAddrModeShortAddress_c;
           mpPacket->msgData.dataReq.srcAddrMode = gAddrModeShortAddress_c;
-          
-          // mpPacket->msgData.dataReq.msduLength = length;
-          
           mpPacket->msgData.dataReq.msduLength = length;
+		  //AnMer:
           // Signal to Coordinator that a sensor message follows
-          mpPacket->msgData.dataReq.pMsdu[0] = 0xFF;
+          mpPacket->msgData.dataReq.pMsdu[0] = 0x03;
           // Put dummy sensor data into the data packet
-          mpPacket->msgData.dataReq.pMsdu[1] = 0xAA;
-          mpPacket->msgData.dataReq.pMsdu[2] = 0xBB;
-          mpPacket->msgData.dataReq.pMsdu[3] = 0xCC;
-          mpPacket->msgData.dataReq.pMsdu[4] = 0xDD;
-
+          mpPacket->msgData.dataReq.pMsdu[1] = 0x34;
+          mpPacket->msgData.dataReq.pMsdu[2] = 0x56;
+          mpPacket->msgData.dataReq.pMsdu[3] = 0xBA;
+          mpPacket->msgData.dataReq.pMsdu[4] = 0xCE;
           /* Request MAC level acknowledgement, and
           indirect transmission of the data packet */
           mpPacket->msgData.dataReq.txOptions = gMacTxOptionsAck_c;
@@ -1302,14 +1290,126 @@ static void App_TransmitMessageSAT(uint8_t length)
             deviceAddress = deviceAddress << 1;
           }
           while(((deviceAddress & mAddressesMap) == 0) && (deviceAddress < 0x10));
-
-          Serial_Print(mInterfaceId, "SENT MESSAGE\n\r", gAllowToBlock_d);
+//AnMer
+          Serial_Print(mInterfaceId, "\n\rSENT MESSAGE\n\r", gAllowToBlock_d);
           /* Continue if we haven't passed the last possible device address. */
           morePackets = deviceAddress < 0x10;
         }
         else
         {
-          Serial_Print(mInterfaceId,"Packet NULL.\n\r", gAllowToBlock_d);
+          Serial_Print(mInterfaceId,"\n\rPacket NULL.\n\r", gAllowToBlock_d);
+        }
+      }
+    }
+    while (morePackets);
+  }
+}
+
+/*AnMer*/
+static void App_TransmitMessageSAT2(uint8_t length)
+{
+  uint8_t morePackets = 1;
+  uint8_t deviceAddress = 0x01;
+  uint8_t ret = 0;
+
+  (void) ret;       // remove compiler warning
+  /* We transmit only if at least one device is associated. */
+  if(mAddressesMap == 0)
+  {
+    return;
+  }
+
+  /* Send packets only if we can send info to all End Devices */
+  if(mcPendingPackets > 0)
+  {
+    if(mPacketDropped > 0)
+    {
+      Serial_Print(mInterfaceId,"Packet dropped.\n\r", gAllowToBlock_d);
+      mPacketDropped = 0;
+    }
+    return;
+  }
+
+  if(mCounterLEDsModified)
+  {
+    mCounterLEDsModified = FALSE;
+    mPacketDropped = FALSE;
+  }
+
+  /* For every device associated, if there is still room in the queue
+  allocate and send a packet */
+  if(length != 0)
+  {
+    /* Find the first associated end device. We have at least one.*/
+    while((deviceAddress & mAddressesMap) == 0)
+    {
+      deviceAddress = deviceAddress << 1;
+    }
+    /* Transmit packets to the devices */
+    do
+    {
+      morePackets = 0;
+      if (mcPendingPackets < mMaxPendingDataPackets_c && NULL == mpPacket)
+      {
+        mpPacket = MSG_Alloc(sizeof(nwkToMcpsMessage_t) + gMaxPHYPacketSize_c);
+
+        if (mpPacket != NULL)
+        {
+          /* Create an MCPS-Data Request message containing the data. */
+          mpPacket->msgType = gMcpsDataReq_c;
+          /* Copy data to be sent to packet */
+          mpPacket->msgData.dataReq.pMsdu = (uint8_t*)(&(mpPacket->msgData.dataReq.pMsdu)) + sizeof(uint8_t*);
+          // AnMer: FLib_MemCpy(mpPacket->msgData.dataReq.pMsdu, (void *)pData, length);
+          /* Create the header using device information stored when creating
+          the association response. In this simple example the use of short
+          addresses is hardcoded. In a real world application we must be
+          flexible, and use the address mode required by the given situation. */
+          mpPacket->msgData.dataReq.dstAddr = deviceAddress;
+
+          FLib_MemCpy(&mpPacket->msgData.dataReq.srcAddr,  (void*)&mShortAddress, 2);
+          FLib_MemCpy(&mpPacket->msgData.dataReq.dstPanId, (void*)&mPanId, 2);
+          FLib_MemCpy(&mpPacket->msgData.dataReq.srcPanId, (void*)&mPanId, 2);
+          mpPacket->msgData.dataReq.dstAddrMode = gAddrModeShortAddress_c;
+          mpPacket->msgData.dataReq.srcAddrMode = gAddrModeShortAddress_c;
+          mpPacket->msgData.dataReq.msduLength = length;
+		  //AnMer:
+          // Signal to Coordinator that a sensor message follows
+          mpPacket->msgData.dataReq.pMsdu[0] = 0x03;
+          // Put dummy sensor data into the data packet
+          mpPacket->msgData.dataReq.pMsdu[1] = 0x34;
+          mpPacket->msgData.dataReq.pMsdu[2] = 0x56;
+          mpPacket->msgData.dataReq.pMsdu[3] = 0xCA;
+          mpPacket->msgData.dataReq.pMsdu[4] = 0xBA;
+          /* Request MAC level acknowledgement, and
+          indirect transmission of the data packet */
+          mpPacket->msgData.dataReq.txOptions = gMacTxOptionsAck_c;
+          //mpPacket->msgData.dataReq.txOptions |= gMacTxOptionIndirect_c;
+          /* Give the data packet a handle. The handle is
+          returned in the MCPS-Data Confirm message. */
+          mpPacket->msgData.dataReq.msduHandle = mMsduHandle++;
+          mpPacket->msgData.dataReq.securityLevel = gMacSecurityNone_c;
+
+          /* Add the packet to tracking list in the purger module. */
+          ret = Purger_Track(mpPacket->msgData.dataReq.msduHandle, 0, deviceAddress, mCounterLEDs);
+          /* Send the Data Request to the MCPS */
+          (void)NWK_MCPS_SapHandler(mpPacket, mMacInstance);
+          /* Prepare for another data buffer */
+          mpPacket = NULL;
+          mcPendingPackets++;
+          /* Move to next associated device */
+          do
+          {
+            deviceAddress = deviceAddress << 1;
+          }
+          while(((deviceAddress & mAddressesMap) == 0) && (deviceAddress < 0x10));
+//AnMer
+          Serial_Print(mInterfaceId, "\n\rSENT MESSAGE\n\r", gAllowToBlock_d);
+          /* Continue if we haven't passed the last possible device address. */
+          morePackets = deviceAddress < 0x10;
+        }
+        else
+        {
+          Serial_Print(mInterfaceId,"\n\rPacket NULL.\n\r", gAllowToBlock_d);
         }
       }
     }
@@ -1395,7 +1495,7 @@ static void App_IntervalTimeoutHandler(void *pData)
   (void)Purger_Check(mCounterLEDs, mMacInstance, mInterfaceId);
     
   CounterLed = mCounterLEDs & 0x0F;
-    
+    //AnMer
   // App_TransmitData(&CounterLed, 1);      
 
 }
@@ -1475,97 +1575,50 @@ resultType_t MCPS_NWK_SapHandler (mcpsToNwkMessage_t* pMsg, instanceId_t instanc
   return gSuccess_c;
 }
 
+/* AnMer App_AutenticationMessage function */
 void App_AutenticationMessage(mcpsToNwkMessage_t *pMsg)
 {
+	uint8_t Sat_ID = 0;
+	uint8_t Password1 = 0;
+	uint8_t Password2 = 0;
+	uint8_t Message1 = 0;
+	uint8_t Message2 = 0;
+	uint16_t Password = 0;
+	uint16_t Message = 0;
+	Sat_ID = pMsg->msgData.dataInd.pMsdu[1];
+	Password1 = pMsg->msgData.dataInd.pMsdu[2];
+	Password2 = pMsg->msgData.dataInd.pMsdu[3];
+	Message1 = pMsg->msgData.dataInd.pMsdu[4];
+	Message2 = pMsg->msgData.dataInd.pMsdu[5];
 
-    uint8_t Sat_ID = pMsg->msgData.dataInd.pMsdu[1];
-
-    uint8_t Password1 = pMsg->msgData.dataInd.pMsdu[2];
-
-    uint8_t Password2 = pMsg->msgData.dataInd.pMsdu[3];
-
-    uint8_t Message1 = pMsg->msgData.dataInd.pMsdu[4];
-
-    uint8_t Message2 = pMsg->msgData.dataInd.pMsdu[5];
-
-    uint16_t Password;
-
-    uint16_t Message;
-
-      /* Password and Message concatenation */
-
-    Password = (Password2 <<8) | (Password1 );
-
-    Message = (Message2 <<8) | (Message1 );
-
-    /* SAT 1 Validation */
-
-    if(Sat_ID == SAT1_ID && Password == PASSWORD_SAT1)
-
-    {
-
-        Serial_Print(mInterfaceId," Validation for Satellite 1 is complete\n\r Password:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
-
-        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
-
-        //App_TransmitMessageSAT(&CounterLed, 1);
-
-
-  
-
-
-    }
-
-    else
-
-    {
-
-        Serial_Print(mInterfaceId," Error \n\r Password:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
-
-        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
-
-    }
-
-    /* SAT 2 Validation */
-
-    if(Sat_ID == SAT2_ID && Password == PASSWORD_SAT2)
-
-    {
-
-        Serial_Print(mInterfaceId," Validation for Satellite 2 is complete\n\r Password:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
-
-        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
-
-        //App_TransmitMessageSAT(&CounterLed, 1);
-
-
-  
-
-
-    }
-
-    else
-
-    {
-        Serial_Print(mInterfaceId," Error \n\r Password:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
-
-        Serial_Print(mInterfaceId," Message:", gNoBlock_d);
-
-        Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
-
-    }
+    /* Password and Message concatenation */
+	Password = (Password2 <<8) | (Password1 );
+	Message = (Message2 <<8) | (Message1 );
+	/* SAT 1 Validation */
+	if(Sat_ID == SAT1_ID && Password == PASSWORD_SAT1)
+	{
+		Serial_Print(mInterfaceId," Validation for Satellite 1 is complete\n\r Password:", gNoBlock_d);
+		Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+		Serial_Print(mInterfaceId," \n\r Message:", gNoBlock_d);
+		Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+    SysTick_DelayTicks(4000U);
+		App_TransmitMessageSAT1(5);
+	}
+	/* SAT 2 Validation */
+	else if(Sat_ID == SAT2_ID && Password == PASSWORD_SAT2)
+	{
+		Serial_Print(mInterfaceId," Validation for Satellite 2 is complete\n\r Password:", gNoBlock_d);
+		Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+		Serial_Print(mInterfaceId," \n\r Message:", gNoBlock_d);
+		Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+    SysTick_DelayTicks(4000U);
+		App_TransmitMessageSAT2(5);
+	}
+	else
+	{
+		Serial_Print(mInterfaceId," Error Invalid Password:", gNoBlock_d);
+		Serial_PrintHex(mInterfaceId,(uint8_t*)&Password, 2, 0);
+		Serial_Print(mInterfaceId," Message:", gNoBlock_d);
+		Serial_PrintHex(mInterfaceId,(uint8_t*)&Message, 2, 0);
+	}
 }

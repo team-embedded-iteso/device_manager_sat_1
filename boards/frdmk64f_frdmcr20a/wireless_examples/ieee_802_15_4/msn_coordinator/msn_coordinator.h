@@ -66,9 +66,9 @@
 #define SAT1_ID									1
 #define SAT2_ID									2
 #define Terrain_Base_ID							3
-#define PASSWORD_SAT1							1234
-#define PASSWORD_SAT2							5678
-#define PASSWORD_TB								3456
+#define PASSWORD_SAT1							0x1234
+#define PASSWORD_SAT2							0x5678
+#define PASSWORD_TB								0x3456
 
 /************************************************************************************
 *************************************************************************************
